@@ -4,43 +4,62 @@
     <meta charset="UTF-8">
     <title>記憶翻牌小工具</title>
     <style>
-        body { 
-            background-color: #121212; 
-            color: #e0e0e0; 
-            display: flex; 
-            gap: 30px; 
-            padding: 20px; 
-            font-family: 'Segoe UI', sans-serif; 
-        }
-        /* 控制區 */
-        .controls { margin-bottom: 20px; }
-        input { background: #333; color: white; border: 1px solid #555; padding: 5px; width: 50px; }
+        body { background-color: rgb(65, 138, 228); color: white; font-family: sans-serif; padding: 20px; display: flex; justify-content: center; gap: 20px; }
+        .game-wrapper { display: flex; flex-direction: column; align-items: center; }
+        .top-control { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .left-sidebar { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 50px; }
+        input { width: 60px; height: 50px; font-size: 20px; background: #fff; border: none; text-align: center; border-radius: 4px; }
+        .btn-side { width: 50px; height: 50px; cursor: pointer; font-size: 20px; border: none; border-radius: 4px; }
         
-        /* 遊戲區 */
-        .grid-container { display: grid; gap: 8px; }
+        .grid-container { display: grid; gap: 8px; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 8px; }
         .card { 
-            width: 60px; height: 60px; cursor: pointer; 
-            border: 2px solid #444; border-radius: 4px;
-            transition: transform 0.1s;
+            width: 70px; height: 70px; cursor: pointer; 
+            border: 2px solid #fff; border-radius: 6px; 
+            transition: 0.2s; box-sizing: border-box;
+            overflow: hidden;
+            position: relative;
         }
-        .card.active { border: 3px solid #00e676; transform: scale(1.05); }
-        .card.cleared { opacity: 0.15; filter: grayscale(100%); cursor: default; }
         
-        /* 右側選單 */
-        .selector-container { 
-            display: grid; grid-template-columns: repeat(3, 1fr); 
-            gap: 10px; align-content: start;
+        .card-img {
+            width: 100%; height: 100%;
+            object-fit: cover; 
+            transition: all 0.2s;
         }
-        .select-btn { width: 50px; height: 50px; cursor: pointer; border: 1px solid #444; }
+        
+        /* 綠色選中效果 */
+        .card.active { 
+            box-shadow: 0 0 0 4px #00e676 !important; 
+            border-color: #00e676;
+            transform: scale(1.05); 
+            z-index: 10; /* 選中時浮在上面 */
+        }
+        
+        /* 消除狀態*/
+        .card.cleared .card-img { 
+            opacity: 0.3; 
+            filter: grayscale(100%); 
+        }
+        
+        .selector-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-content: start; margin-top: 50px; }
+        .select-btn { width: 60px; height: 60px; cursor: pointer; border: 2px solid #fff; background: white; }
     </style>
 </head>
 <body>
 
-<div>
-    <div class="controls">
-        寬: <input type="number" id="cols" value="4" min="1" onchange="createGrid()">
-        高: <input type="number" id="rows" value="4" min="1" onchange="createGrid()">
-        <button onclick="clearAll()">全部重置</button>
+<div class="left-sidebar">
+    <label>高度</label>
+    <button class="btn-side" onclick="adjust('rows', 1)">▲</button>
+    <input type="number" id="rows" value="3" readonly>
+    <button class="btn-side" onclick="adjust('rows', -1)">▼</button>
+    <button style="padding: 8px; margin-top: 10px; cursor: pointer;" onclick="clearAll()">重置全部</button>
+</div>
+
+<div class="game-wrapper">
+    <div class="top-control">
+        <label>寬度</label>
+        <button class="btn-side" onclick="adjust('cols', -1)">◀</button>
+        <input type="number" id="cols" value="3" readonly>
+        <button class="btn-side" onclick="adjust('cols', 1)">▶</button>
     </div>
     <div id="grid" class="grid-container"></div>
 </div>
@@ -48,64 +67,64 @@
 <div class="selector-container" id="selector"></div>
 
 <script>
-    let selectedCell = null;
+    let activeCard = null;
+    let activeImg = null;
+
+    function adjust(id, val) {
+        const el = document.getElementById(id);
+        let n = parseInt(el.value) + val;
+        if (n < 1) n = 1;
+        el.value = n;
+        createGrid();
+    }
 
     function createGrid() {
         const cols = document.getElementById('cols').value;
         const rows = document.getElementById('rows').value;
         const grid = document.getElementById('grid');
-        grid.style.gridTemplateColumns = `repeat(${cols}, 60px)`;
+        grid.style.gridTemplateColumns = `repeat(${cols}, 70px)`;
         grid.innerHTML = '';
 
         for (let i = 0; i < cols * rows; i++) {
-            const img = document.createElement('img');
-            img.src = 'images/0.png'; // 預設背面
-            img.className = 'card';
-            img.onclick = function() {
-                // 如果已經消除，則點擊復原
-                if (this.classList.contains('cleared')) {
-                    this.classList.remove('cleared');
-                    return;
-                }
-                // 否則進入選中模式
-                if (selectedCell) selectedCell.classList.remove('active');
-                selectedCell = this;
-                this.classList.add('active');
-            };
-            // 滑鼠右鍵點擊：標記為消除
-            img.oncontextmenu = function(e) {
-                e.preventDefault();
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'card';
+          
+            const cardImg = document.createElement('img');
+            cardImg.src = 'images/0.png';
+            cardImg.className = 'card-img';
+            
+            cardDiv.appendChild(cardImg);
+            
+            cardDiv.onclick = function() {
+                // 維持選中效果：套用在 cardDiv 上
+                if (activeCard) activeCard.classList.remove('active');
+                activeCard = this;
+                activeImg = this.querySelector('.card-img');
+                activeCard.classList.add('active');
+                
+                // 切換消除狀態 (套用在 cardDiv 上)
                 this.classList.toggle('cleared');
-                this.classList.remove('active');
-                if (selectedCell === this) selectedCell = null;
             };
-            grid.appendChild(img);
+            grid.appendChild(cardDiv);
         }
     }
 
-    // 初始化右側選擇器
     const selector = document.getElementById('selector');
     for (let i = 0; i <= 9; i++) {
         const btn = document.createElement('img');
         btn.src = `images/${i}.png`;
         btn.className = 'select-btn';
-        btn.onclick = () => {
-            if (selectedCell) {
-                selectedCell.src = `images/${i}.png`;
-                selectedCell.classList.remove('active', 'cleared');
-                selectedCell = null;
+        btn.onclick = function() {
+
+            if (activeImg && activeCard) {
+                activeImg.src = `images/${i}.png`;
+                activeCard.classList.remove('cleared');
             }
         };
         selector.appendChild(btn);
     }
 
-    function clearAll() {
-        document.querySelectorAll('.card').forEach(c => {
-            c.src = 'images/0.png';
-            c.className = 'card';
-        });
-    }
-
+    function clearAll() { createGrid(); activeCard = null; activeImg = null; }
     createGrid();
 </script>
 </body>
