@@ -4,71 +4,64 @@
     <meta charset="UTF-8">
     <title>記憶翻牌小工具</title>
     <style>
-        body { background-color: rgb(65, 138, 228); color: white; font-family: sans-serif; padding: 20px; display: flex; justify-content: center; gap: 20px; }
+        body { background-color: rgb(65, 138, 228); color: white; font-family: sans-serif; padding: 20px; }
+        
+        /* 根容器：預設橫向 */
+        .main-wrapper { display: flex; justify-content: center; gap: 20px; }
+        
+        /* 切換版面時的樣式 (column) */
+        .main-wrapper.column-layout { flex-direction: column; align-items: center; }
+
         .game-wrapper { display: flex; flex-direction: column; align-items: center; }
         .top-control { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
         .left-sidebar { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 50px; }
+        
         input { width: 60px; height: 50px; font-size: 20px; background: #fff; border: none; text-align: center; border-radius: 4px; }
         .btn-side { width: 50px; height: 50px; cursor: pointer; font-size: 20px; border: none; border-radius: 4px; }
         
         .grid-container { display: grid; gap: 8px; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 8px; }
-        .card { 
-            width: 70px; height: 70px; cursor: pointer; 
-            border: 2px solid #fff; border-radius: 6px; 
-            transition: 0.2s; box-sizing: border-box;
-            overflow: hidden;
-            position: relative;
-        }
+        .card { width: 70px; height: 70px; cursor: pointer; border: 2px solid #fff; border-radius: 6px; transition: 0.2s; position: relative; overflow: hidden; }
+        .card-img { width: 100%; height: 100%; object-fit: cover; transition: all 0.2s; }
+        .card.active { box-shadow: 0 0 0 4px #00e676 !important; border-color: #00e676; transform: scale(1.05); z-index: 10; }
+        .card.cleared .card-img { opacity: 0.3; filter: grayscale(100%); }
         
-        .card-img {
-            width: 100%; height: 100%;
-            object-fit: cover; 
-            transition: all 0.2s;
-        }
-        
-        /* 綠色選中效果 */
-        .card.active { 
-            box-shadow: 0 0 0 4px #00e676 !important; 
-            border-color: #00e676;
-            transform: scale(1.05); 
-            z-index: 10; /* 選中時浮在上面 */
-        }
-        
-        /* 消除狀態*/
-        .card.cleared .card-img { 
-            opacity: 0.3; 
-            filter: grayscale(100%); 
-        }
-        
+        /* 右側/下方選單 */
         .selector-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-content: start; margin-top: 50px; }
+        .main-wrapper.column-layout .selector-container { grid-template-columns: repeat(10, 1fr); margin-top: 20px; }
         .select-btn { width: 60px; height: 60px; cursor: pointer; border: 2px solid #fff; background: white; }
     </style>
 </head>
 <body>
 
-<div class="left-sidebar">
-    <label>高度</label>
-    <button class="btn-side" onclick="adjust('rows', 1)">▲</button>
-    <input type="number" id="rows" value="3" readonly>
-    <button class="btn-side" onclick="adjust('rows', -1)">▼</button>
-    <button style="padding: 8px; margin-top: 10px; cursor: pointer;" onclick="clearAll()">重置全部</button>
-</div>
-
-<div class="game-wrapper">
-    <div class="top-control">
-        <label>寬度</label>
-        <button class="btn-side" onclick="adjust('cols', -1)">◀</button>
-        <input type="number" id="cols" value="3" readonly>
-        <button class="btn-side" onclick="adjust('cols', 1)">▶</button>
+<div class="main-wrapper" id="mainWrapper">
+    <div class="left-sidebar">
+        <label>高度</label>
+        <button class="btn-side" onclick="adjust('rows', 1)">▲</button>
+        <input type="number" id="rows" value="4" readonly>
+        <button class="btn-side" onclick="adjust('rows', -1)">▼</button>
+        <button style="padding: 10px; margin-top: 10px; cursor: pointer;" onclick="clearAll()">重置全部</button>
     </div>
-    <div id="grid" class="grid-container"></div>
-</div>
 
-<div class="selector-container" id="selector"></div>
+    <div class="game-wrapper">
+        <div class="top-control">
+            <label>寬度</label>
+            <button class="btn-side" onclick="adjust('cols', -1)">◀</button>
+            <input type="number" id="cols" value="4" readonly>
+            <button class="btn-side" onclick="adjust('cols', 1)">▶</button>
+            <button class="btn-side" style="width: 80px;" onclick="toggleLayout()">切換排版</button>
+        </div>
+        <div id="grid" class="grid-container"></div>
+    </div>
+
+    <div class="selector-container" id="selector"></div>
+</div>
 
 <script>
-    let activeCard = null;
-    let activeImg = null;
+    let activeCard = null, activeImg = null;
+
+    function toggleLayout() {
+        document.getElementById('mainWrapper').classList.toggle('column-layout');
+    }
 
     function adjust(id, val) {
         const el = document.getElementById(id);
@@ -84,25 +77,18 @@
         const grid = document.getElementById('grid');
         grid.style.gridTemplateColumns = `repeat(${cols}, 70px)`;
         grid.innerHTML = '';
-
         for (let i = 0; i < cols * rows; i++) {
             const cardDiv = document.createElement('div');
             cardDiv.className = 'card';
-          
             const cardImg = document.createElement('img');
             cardImg.src = 'images/0.png';
             cardImg.className = 'card-img';
-            
             cardDiv.appendChild(cardImg);
-            
             cardDiv.onclick = function() {
-                // 維持選中效果：套用在 cardDiv 上
                 if (activeCard) activeCard.classList.remove('active');
                 activeCard = this;
                 activeImg = this.querySelector('.card-img');
                 activeCard.classList.add('active');
-                
-                // 切換消除狀態 (套用在 cardDiv 上)
                 this.classList.toggle('cleared');
             };
             grid.appendChild(cardDiv);
@@ -115,7 +101,6 @@
         btn.src = `images/${i}.png`;
         btn.className = 'select-btn';
         btn.onclick = function() {
-
             if (activeImg && activeCard) {
                 activeImg.src = `images/${i}.png`;
                 activeCard.classList.remove('cleared');
