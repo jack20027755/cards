@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-Htw">
+<head>
+    <meta charset="UTF-8">
+    <title>記憶翻牌小工具 - 夜晚模式</title>
+    <style>
+        body { 
+            background-color: #121212; 
+            color: #e0e0e0; 
+            display: flex; 
+            gap: 30px; 
+            padding: 20px; 
+            font-family: 'Segoe UI', sans-serif; 
+        }
+        /* 控制區 */
+        .controls { margin-bottom: 20px; }
+        input { background: #333; color: white; border: 1px solid #555; padding: 5px; width: 50px; }
+        
+        /* 遊戲區 */
+        .grid-container { display: grid; gap: 8px; }
+        .card { 
+            width: 60px; height: 60px; cursor: pointer; 
+            border: 2px solid #444; border-radius: 4px;
+            transition: transform 0.1s;
+        }
+        .card.active { border: 3px solid #00e676; transform: scale(1.05); }
+        .card.cleared { opacity: 0.15; filter: grayscale(100%); cursor: default; }
+        
+        /* 右側選單 */
+        .selector-container { 
+            display: grid; grid-template-columns: repeat(3, 1fr); 
+            gap: 10px; align-content: start;
+        }
+        .select-btn { width: 50px; height: 50px; cursor: pointer; border: 1px solid #444; }
+    </style>
+</head>
+<body>
+
+<div>
+    <div class="controls">
+        寬: <input type="number" id="cols" value="4" min="1" onchange="createGrid()">
+        高: <input type="number" id="rows" value="4" min="1" onchange="createGrid()">
+        <button onclick="clearAll()">全部重置</button>
+    </div>
+    <div id="grid" class="grid-container"></div>
+</div>
+
+<div class="selector-container" id="selector"></div>
+
+<script>
+    let selectedCell = null;
+
+    function createGrid() {
+        const cols = document.getElementById('cols').value;
+        const rows = document.getElementById('rows').value;
+        const grid = document.getElementById('grid');
+        grid.style.gridTemplateColumns = `repeat(${cols}, 60px)`;
+        grid.innerHTML = '';
+
+        for (let i = 0; i < cols * rows; i++) {
+            const img = document.createElement('img');
+            img.src = 'images/0.png'; // 預設背面
+            img.className = 'card';
+            img.onclick = function() {
+                // 如果已經消除，則點擊復原
+                if (this.classList.contains('cleared')) {
+                    this.classList.remove('cleared');
+                    return;
+                }
+                // 否則進入選中模式
+                if (selectedCell) selectedCell.classList.remove('active');
+                selectedCell = this;
+                this.classList.add('active');
+            };
+            // 滑鼠右鍵點擊：標記為消除
+            img.oncontextmenu = function(e) {
+                e.preventDefault();
+                this.classList.toggle('cleared');
+                this.classList.remove('active');
+                if (selectedCell === this) selectedCell = null;
+            };
+            grid.appendChild(img);
+        }
+    }
+
+    // 初始化右側選擇器
+    const selector = document.getElementById('selector');
+    for (let i = 0; i <= 9; i++) {
+        const btn = document.createElement('img');
+        btn.src = `images/${i}.png`;
+        btn.className = 'select-btn';
+        btn.onclick = () => {
+            if (selectedCell) {
+                selectedCell.src = `images/${i}.png`;
+                selectedCell.classList.remove('active', 'cleared');
+                selectedCell = null;
+            }
+        };
+        selector.appendChild(btn);
+    }
+
+    function clearAll() {
+        document.querySelectorAll('.card').forEach(c => {
+            c.src = 'images/0.png';
+            c.className = 'card';
+        });
+    }
+
+    createGrid();
+</script>
+</body>
+</html>
