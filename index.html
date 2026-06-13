@@ -4,53 +4,64 @@
     <meta charset="UTF-8">
     <title>記憶翻牌小工具</title>
     <style>
-        body { background-color: rgb(65, 138, 228); color: white; font-family: sans-serif; padding: 20px; }
+        body { 
+            background: linear-gradient(135deg, #aaddff, #2a5a9a);
+            background-attachment: fixed; /* 固定背景，捲動時不會位移 */
+            color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; 
+            display: flex; justify-content: center; min-height: 100vh;
+        }
         
-        /* 根容器：預設橫向 */
-        .main-wrapper { display: flex; justify-content: center; gap: 20px; }
-        
-        /* 切換版面時的樣式 (column) */
-        .main-wrapper.column-layout { flex-direction: column; align-items: center; }
+        .page-wrapper { display: flex; gap: 20px; align-items: flex-start; justify-content: center; }
+        .page-wrapper.column-layout { flex-direction: column; align-items: center; }
 
-        .game-wrapper { display: flex; flex-direction: column; align-items: center; }
-        .top-control { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        .left-sidebar { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 50px; }
+        .game-zone { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .control-row { display: flex; align-items: center; gap: 15px; }
+        .left-height-ctrl { display: flex; flex-direction: column; align-items: center; gap: 5px; }
         
-        input { width: 60px; height: 50px; font-size: 20px; background: #fff; border: none; text-align: center; border-radius: 4px; }
-        .btn-side { width: 50px; height: 50px; cursor: pointer; font-size: 20px; border: none; border-radius: 4px; }
+        button { cursor: pointer; border: none; border-radius: 8px; background: #ffffff; color: #4a90e2; font-weight: bold; transition: 0.2s; box-shadow: 2px 2px 5px rgba(0,0,0,0.2); }
+        button:hover { background: #f0f0f0; }
+        .btn-side { width: 45px; height: 45px; font-size: 18px; }
+        .btn-layout { padding: 10px 15px; }
         
-        .grid-container { display: grid; gap: 8px; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 8px; }
-        .card { width: 70px; height: 70px; cursor: pointer; border: 2px solid #fff; border-radius: 6px; transition: 0.2s; position: relative; overflow: hidden; }
-        .card-img { width: 100%; height: 100%; object-fit: cover; transition: all 0.2s; }
+        input { width: 50px; height: 45px; font-size: 18px; background: rgba(255,255,255,0.9); color: #333; border: none; text-align: center; border-radius: 8px; font-weight: bold; }
+        
+        .grid-container { display: grid; gap: 8px; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 12px; }
+        .card { width: 70px; height: 70px; cursor: pointer; border: 2px solid #fff; border-radius: 8px; overflow: hidden; position: relative; }
+        .card-img { width: 100%; height: 100%; object-fit: cover; transition: 0.2s; }
         .card.active { box-shadow: 0 0 0 4px #00e676 !important; border-color: #00e676; transform: scale(1.05); z-index: 10; }
         .card.cleared .card-img { opacity: 0.3; filter: grayscale(100%); }
         
-        /* 右側/下方選單 */
-        .selector-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-content: start; margin-top: 50px; }
-        .main-wrapper.column-layout .selector-container { grid-template-columns: repeat(10, 1fr); margin-top: 20px; }
-        .select-btn { width: 60px; height: 60px; cursor: pointer; border: 2px solid #fff; background: white; }
+        .selector-container { display: grid; gap: 10px; align-content: start; }
+        .selector-container { grid-template-columns: repeat(3, 1fr); }
+        .page-wrapper.column-layout .selector-container { grid-template-columns: repeat(5, 1fr); }
+        
+        .select-btn { width: 60px; height: 60px; cursor: pointer; border: 2px solid #fff; border-radius: 8px; background: white; }
     </style>
 </head>
 <body>
 
-<div class="main-wrapper" id="mainWrapper">
-    <div class="left-sidebar">
-        <label>高度</label>
-        <button class="btn-side" onclick="adjust('rows', 1)">▲</button>
-        <input type="number" id="rows" value="4" readonly>
-        <button class="btn-side" onclick="adjust('rows', -1)">▼</button>
-        <button style="padding: 10px; margin-top: 10px; cursor: pointer;" onclick="clearAll()">重置全部</button>
-    </div>
-
-    <div class="game-wrapper">
-        <div class="top-control">
-            <label>寬度</label>
-            <button class="btn-side" onclick="adjust('cols', -1)">◀</button>
-            <input type="number" id="cols" value="4" readonly>
-            <button class="btn-side" onclick="adjust('cols', 1)">▶</button>
-            <button class="btn-side" style="width: 80px;" onclick="toggleLayout()">切換排版</button>
+<div class="page-wrapper" id="mainWrapper">
+    <div class="game-zone">
+        <div class="control-row">
+            <div class="left-height-ctrl">
+                <label>高度</label>
+                <button class="btn-side" onclick="adjust('rows', 1)">▲</button>
+                <input type="number" id="rows" value="4" readonly>
+                <button class="btn-side" onclick="adjust('rows', -1)">▼</button>
+                <button class="btn-layout" onclick="clearAll()">重置</button>
+            </div>
+            
+            <div style="display:flex; flex-direction:column; align-items:center; gap:5px;">
+                <div class="control-row">
+                    <label>寬度</label>
+                    <button class="btn-side" onclick="adjust('cols', -1)">◀</button>
+                    <input type="number" id="cols" value="4" readonly>
+                    <button class="btn-side" onclick="adjust('cols', 1)">▶</button>
+                    <button class="btn-layout" id="layoutBtn" onclick="toggleLayout()">切換直屏</button>
+                </div>
+                <div id="grid" class="grid-container"></div>
+            </div>
         </div>
-        <div id="grid" class="grid-container"></div>
     </div>
 
     <div class="selector-container" id="selector"></div>
@@ -60,7 +71,10 @@
     let activeCard = null, activeImg = null;
 
     function toggleLayout() {
-        document.getElementById('mainWrapper').classList.toggle('column-layout');
+        const wrapper = document.getElementById('mainWrapper');
+        const btn = document.getElementById('layoutBtn');
+        wrapper.classList.toggle('column-layout');
+        btn.innerText = wrapper.classList.contains('column-layout') ? "切換橫屏" : "切換直屏";
     }
 
     function adjust(id, val) {
