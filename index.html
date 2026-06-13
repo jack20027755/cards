@@ -6,9 +6,9 @@
     <style>
         body { 
             background: linear-gradient(135deg, #aaddff, #2a5a9a);
-            background-attachment: fixed; /* 固定背景，捲動時不會位移 */
+            background-attachment: fixed;
             color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; 
-            display: flex; justify-content: center; min-height: 100vh;
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
         }
         
         .page-wrapper { display: flex; gap: 20px; align-items: flex-start; justify-content: center; }
@@ -36,6 +36,8 @@
         .page-wrapper.column-layout .selector-container { grid-template-columns: repeat(5, 1fr); }
         
         .select-btn { width: 60px; height: 60px; cursor: pointer; border: 2px solid #fff; border-radius: 8px; background: white; }
+        
+        .footer-guide { margin-top: 30px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; line-height: 1.6; }
     </style>
 </head>
 <body>
@@ -48,11 +50,11 @@
                 <button class="btn-side" onclick="adjust('rows', 1)">▲</button>
                 <input type="number" id="rows" value="4" readonly>
                 <button class="btn-side" onclick="adjust('rows', -1)">▼</button>
-                <button class="btn-layout" onclick="clearAll()">重置</button>
             </div>
             
             <div style="display:flex; flex-direction:column; align-items:center; gap:5px;">
                 <div class="control-row">
+                    <button class="btn-layout" onclick="clearAll()">重置</button>
                     <label>寬度</label>
                     <button class="btn-side" onclick="adjust('cols', -1)">◀</button>
                     <input type="number" id="cols" value="4" readonly>
@@ -65,6 +67,13 @@
     </div>
 
     <div class="selector-container" id="selector"></div>
+</div>
+
+<div class="footer-guide">
+    <strong>使用方式：</strong><br>
+    1. 先點擊卡牌選擇位置（出現綠框）。<br>
+    2. 點擊右側你想更改的卡片樣式。<br>
+    若不選擇則會維持灰色的消除狀態。
 </div>
 
 <script>
